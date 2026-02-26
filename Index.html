@@ -1,11 +1,568 @@
 <!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TNR Meeting Room Booking System</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<html>
-   <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-      <base target="_top">
-   </head>
-   <body>
-      <iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;border: 0;" src="https://script.google.com/macros/s/AKfycbxJcT8ZN8KgSlvtPBAwP3p7uI_1k31f51Cyz2LP8Mk0PhP10mbraiJyS-IsdyfZoRfyPg/exec"></iframe>
-   </body>
+  <style>
+    :root { 
+      --primary-blue: #007bff;   
+      --light-blue: #e7f1ff;     
+      --vibrant-pink: #ff1493;   
+      --light-pink: #ffe6f2;     
+      --deep-bg: #f4f7f6;        
+    }
+
+    body { background: var(--deep-bg); font-family: 'Prompt', sans-serif; color: #2b2d42; font-size: 16px; }
+    .card { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 25px; }
+    .bg-gradient-header { background: linear-gradient(135deg, #0056b3 0%, #007bff 100%); color: white; }
+    .bg-gradient-blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+    .bg-gradient-pink { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); color: white; }
+    .btn-primary { background: linear-gradient(135deg, #007bff, #4facfe); border: none; border-radius: 12px; padding: 12px 25px; font-weight: 600; }
+    .btn-success { background: linear-gradient(135deg, #ff1493, #ff758c); border: none; border-radius: 12px; padding: 12px 25px; font-weight: 600; }
+    .btn-info { background: var(--primary-blue); border: none; color: white; }
+    .form-control, .form-select { border-radius: 12px; border: 2px solid #ced4da; padding: 10px; font-size: 1rem; }
+    .form-control:focus { border-color: var(--vibrant-pink); box-shadow: 0 0 0 4px rgba(255, 20, 147, 0.1); } 
+    .auth-wrapper { max-width: 500px; margin: 80px auto; }
+    .main-wrapper { max-width: 1400px; margin: 40px auto; display: none; }
+    #calendar { background: white; padding: 30px; border-radius: 0 0 25px 25px; border: 1px solid #eee; border-top: none; }
+    .calendar-header { background: linear-gradient(135deg, #0056b3, #007bff); color: white; padding: 15px 30px; border-radius: 25px 25px 0 0; font-weight: bold; font-size: 1.2rem; }
+    .badge { padding: 10px 18px; border-radius: 12px; font-size: 0.9rem; }
+    .stat-val { font-size: 3.5rem; font-weight: 800; }
+    .table-light { background-color: var(--light-blue); color: #0056b3; }
+
+    @media (max-width: 768px) {
+      body { font-size: 14px; }
+      .card { border-radius: 15px; margin-bottom: 15px; }
+      .main-wrapper { margin: 15px auto; padding: 0 10px; }
+      .d-flex.justify-content-between { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+      .text-end.d-flex { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; width: 100%; }
+      .btn-primary, .btn-success, .btn-outline-danger, .btn-info { padding: 8px 15px; font-size: 0.9rem; }
+      .stat-val { font-size: 2.5rem; }
+      #calendar { padding: 15px; }
+      .calendar-header { padding: 10px 15px; font-size: 1.1rem; }
+      .table-responsive { font-size: 0.85rem; }
+      .auth-wrapper { margin: 40px auto; padding: 0 15px; }
+      .card-body.p-5 { padding: 2rem !important; }
+      .form-control, .form-select { padding: 8px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="authSection" class="container auth-wrapper">
+    <div class="card shadow-lg border-0">
+      <div class="card-header bg-gradient-header text-center text-white" style="border-radius: 20px 20px 0 0;">
+        <h3 class="mb-0 fw-bold"><i class="fa-solid fa-lock me-2"></i>Login/เข้าสู่ระบบ</h3>
+      </div>
+      <div class="card-body p-5">
+        <form id="loginForm">
+          <div class="mb-4"><label class="form-label fw-bold" style="color: var(--primary-blue);">Username (หากเป็นผู้บริหารให้ใช้อีเมล)</label><input type="text" class="form-control" id="loginUsername" required></div>
+          <div class="mb-5"><label class="form-label fw-bold" style="color: var(--primary-blue);">Password</label><input type="password" class="form-control" id="loginPassword" required></div>
+          <button type="submit" id="loginBtn" class="btn btn-primary w-100 py-3">เข้าสู่ระบบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainSection" class="container-fluid main-wrapper">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-4 rounded-4 shadow-sm border-start border-5" style="border-color: var(--primary-blue) !important;">
+      <div class="d-flex align-items-center">
+        <img src="https://lh3.googleusercontent.com/d/1XreUiNnpIFxs_qraizBUdSq3RxbpeZRd" alt="TNR Logo" style="width: 50px; height: 50px; margin-right: 15px; object-fit: contain;">
+        <div>
+          <h2 class="mb-1 fw-bold" style="color: var(--primary-blue);">TNR Meeting Room Booking System</h2>
+          <div class="text-muted"><i class="fa-solid fa-chart-line me-2"></i>Thai Nippon Rubber Industry Public Company Limited</div>
+        </div>
+      </div>
+      <div class="text-end d-flex flex-column align-items-end gap-2">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <i class="fa-solid fa-user" style="color: var(--vibrant-pink);"></i>
+          <span class="text-secondary fw-bold" id="welcomeName">คุณ taworn</span>
+          <span class="text-muted" id="userRoleBadge">(Admin)</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button id="btnNavUsers" class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="switchView('users')" style="display:none"><i class="fa-solid fa-users-gear me-1"></i>จัดการระบบ</button>
+          <button id="btnNavDash" class="btn btn-info btn-sm rounded-pill px-4 text-white" onclick="switchView('dashboard')" style="display:none"><i class="fa-solid fa-house me-1"></i>หน้าจองห้อง</button>
+          <button class="btn btn-outline-danger btn-sm rounded-pill px-4" onclick="logout()"><i class="fa-solid fa-power-off me-1"></i>ออกจากระบบ</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dashboardView">
+      <div id="approvalSection" style="display:none" class="mb-4">
+        <div class="card border-0 border-start border-5 shadow-sm" style="border-color: var(--vibrant-pink) !important;">
+          <div class="card-header" style="background-color: var(--light-pink); border-radius: 15px 15px 0 0;"><h5 class="mb-0 fw-bold" style="color: var(--vibrant-pink);"><i class="fa-solid fa-hourglass-half me-2"></i>รายการรอการอนุมัติ (สำหรับคุณ)</h5></div>
+          <div class="card-body"><div class="table-responsive"><table class="table align-middle w-100"><thead class="table-light"><tr><th>วันที่</th><th>เวลา</th><th>ห้อง</th><th>ผู้จอง</th><th>จัดการ</th></tr></thead><tbody id="approvalBody"></tbody></table></div></div>
+        </div>
+      </div>
+      
+      <div class="row mb-4">
+        <div class="col-md-4"><div class="card bg-gradient-blue text-center p-4 h-100 text-white shadow-sm"><h5>การจองสำเร็จ</h5><div class="stat-val" id="statTotal">0</div></div></div>
+        <div class="col-md-8"><div class="card bg-white p-4 h-100 shadow-sm"><h5 class="fw-bold" style="color: var(--vibrant-pink);"><i class="fa-solid fa-trophy me-2"></i>ห้องประชุมยอดฮิต 3 อันดับแรก</h5><div class="row text-center mt-3" id="statTopRooms"></div></div></div>
+      </div>
+
+      <div class="card mb-4 border-0 shadow-sm border-top border-5 bg-white" style="border-color: var(--primary-blue) !important;">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: var(--primary-blue);"><i class="fa-solid fa-book-open-reader me-2"></i>ระเบียบขั้นตอนการขอใช้ห้องประชุม</h5>
+          <div class="row text-secondary">
+            <div class="col-md-4 mb-3 mb-md-0"><h6 class="fw-bold mb-2" style="color: var(--vibrant-pink);"><i class="fa-solid fa-calendar-check me-2"></i>1. การจองและยกเลิก</h6><ul class="small ps-3 mb-0" style="line-height: 1.6;"><li><b>จองล่วงหน้า:</b> ผ่านระบบ 1-3 วันทำการ</li><li><b>ยกเลิก:</b> หากไม่ใช้ต้องแจ้งทันที</li><li><b>ส่วนกลาง:</b> อาจขอยกเลิกได้หากมีเหตุเร่งด่วน</li></ul></div>
+            <div class="col-md-4 mb-3 mb-md-0 border-start border-light border-2"><h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-users me-2"></i>2. มารยาทและข้อปฏิบัติ</h6><ul class="small ps-3 mb-0" style="line-height: 1.6;"><li><b>เวลา:</b> เข้าและเลิกให้ตรงเวลา</li><li><b>สื่อสาร:</b> ปิดเสียงมือถือ</li><li><b>อาหาร:</b> งดอาหารกลิ่นแรง</li><li><b>ทรัพย์สิน:</b> ห้ามย้ายอุปกรณ์พละการ</li></ul></div>
+            <div class="col-md-4 border-start border-light border-2"><h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-broom me-2"></i>3. หลังการใช้งาน</h6><ul class="small ps-3 mb-0" style="line-height: 1.6;"><li><b>ทำความสะอาด:</b> จัดโต๊ะและทิ้งขยะ</li><li><b>ประหยัดไฟ:</b> ปิดแอร์ ไฟ ทุกครั้ง</li><li><b>ชำรุด:</b> แจ้งทันทีหากพบความเสียหาย</li></ul></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4 border-0 shadow-sm">
+        <div class="calendar-header"><i class="fa-solid fa-calendar-days me-2"></i>ปฏิทินการจองห้องประชุม</div>
+        <div id="calendar"></div>
+      </div>
+
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="card p-4 border-top border-5 shadow-sm" style="border-color: var(--vibrant-pink) !important;">
+            
+            <div class="text-center mb-4 border-bottom pb-3">
+              <img src="https://lh3.googleusercontent.com/d/1XreUiNnpIFxs_qraizBUdSq3RxbpeZRd" alt="TNR Logo" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px;">
+              <h4 class="fw-bold mb-0" style="color: var(--vibrant-pink);">แบบฟอร์มการจองห้องประชุม</h4>
+              <small class="text-muted">Thai Nippon Rubber Industry PCL.</small>
+            </div>
+
+            <form id="bookingForm">
+              <div class="mb-3"><label class="form-label fw-bold text-dark">1. หัวข้อการประชุม</label><input type="text" id="bookTitle" class="form-control" required></div>
+              <div class="row g-2 mb-3"><div class="col-6"><label class="form-label fw-bold text-secondary small">แผนก</label><input type="text" id="bookDept" class="form-control" required></div><div class="col-6"><label class="form-label fw-bold text-secondary small">โทรศัพท์ติดต่อ</label><input type="text" id="bookPhone" class="form-control" required></div></div>
+              <div class="row g-2 mb-3"><div class="col-6"><label class="form-label fw-bold text-secondary small">ประเภทกิจกรรม</label><select id="bookActivityType" class="form-select" required><option>ประชุม</option><option>สัมมนา</option><option>อบรม</option><option>บรรยาย</option><option>รับรองแขก</option><option>อื่นๆ</option></select></div><div class="col-6"><label class="form-label fw-bold text-secondary small">จำนวนผู้เข้าประชุม</label><input type="number" id="bookHeadcount" class="form-control" min="1" required></div></div>
+              <div class="mb-3 p-3 rounded border" style="background-color: var(--light-blue); border-color: var(--primary-blue) !important;"><label class="form-label fw-bold mb-1" style="color: var(--primary-blue);"><i class="fa-solid fa-envelope-circle-check me-2"></i>อีเมลผู้จัดการแผนก (ผู้อนุมัติขั้นที่ 1)</label><input type="email" id="bookManagerEmail" class="form-control" style="border-color: var(--primary-blue);" placeholder="อีเมลหัวหน้างานของคุณ" required><small class="text-muted mt-1 d-block">ระบบจะส่งแจ้งเตือนไปให้หัวหน้าแผนกอนุมัติ</small></div>
+              <hr class="my-4">
+              <div class="mb-3"><label class="form-label fw-bold text-dark">2. วันและเวลา</label></div>
+              <div class="row g-2 mb-3"><div class="col-6"><label class="form-label text-secondary small">เริ่มวันที่</label><input type="date" id="bookStartDate" class="form-control" required></div><div class="col-6"><label class="form-label text-secondary small">ถึงวันที่</label><input type="date" id="bookEndDate" class="form-control" required></div></div>
+              <div class="row g-2 mb-3"><div class="col-6"><label class="form-label text-secondary small">เวลาเริ่ม</label><input type="time" id="bookStartTime" class="form-control" required></div><div class="col-6"><label class="form-label text-secondary small">เวลาสิ้นสุด</label><input type="time" id="bookEndTime" class="form-control" required></div></div>
+              <hr class="my-4"><div class="mb-3"><label class="form-label fw-bold text-dark">3. ห้องประชุม</label><select id="bookRoom" class="form-select" required></select></div><hr class="my-4">
+              <div class="mb-3"><label class="form-label fw-bold text-dark">4. อุปกรณ์ที่ขอใช้</label><div class="row mt-2 text-secondary"><div class="col-6 mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="bookEquip" value="ไมโครโฟน" id="eq1"><label class="form-check-label" for="eq1">ไมโครโฟน</label></div></div><div class="col-6 mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="bookEquip" value="คอมพิวเตอร์" id="eq2"><label class="form-check-label" for="eq2">คอมพิวเตอร์</label></div></div><div class="col-6 mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="bookEquip" value="LCD Projector" id="eq3"><label class="form-check-label" for="eq3">LCD Projector</label></div></div><div class="col-6 mb-2"><div class="form-check"><input class="form-check-input" type="checkbox" name="bookEquip" value="Video Conference" id="eq4"><label class="form-check-label" for="eq4">Video Conf.</label></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="bookEquip" value="ชุดกาวน์รับรองแขก" id="eq5"><label class="form-check-label" for="eq5">ชุดกาวน์รับรองแขก</label></div></div></div></div>
+              <hr class="my-4"><div class="mb-3"><label class="form-label fw-bold text-dark">รายละเอียดเพิ่มเติม (ถ้ามี)</label><textarea id="bookDesc" class="form-control" rows="2"></textarea></div><div class="mb-3"><label class="form-label fw-bold text-secondary small">อีเมลผู้เข้าร่วม (ส่ง Calendar Invite)</label><input type="text" id="bookAttendees" class="form-control" placeholder="user@tnr.co.th, ..."></div><div class="mb-4"><label class="form-label fw-bold text-danger small">แนบเอกสาร (ถ้ามี)</label><input type="file" id="bookFile" class="form-control"></div>
+              <button type="submit" id="submitBookingBtn" class="btn btn-success w-100 py-3 fw-bold fs-5 shadow-sm"><i class="fa-solid fa-paper-plane me-2"></i>ส่งคำขอจองห้อง</button>
+            </form>
+          </div>
+        </div>
+        
+        <div class="col-lg-8"><div class="card p-4 shadow-sm border-top border-5" style="border-color: var(--primary-blue) !important;"><h4 class="mb-4 fw-bold" style="color: var(--primary-blue);"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการจองทั้งหมด</h4><div class="table-responsive"><table id="bookingTable" class="table table-hover w-100"><thead class="table-light"><tr><th>วันที่</th><th>เวลา</th><th>ห้อง</th><th>ผู้จอง</th><th>ไฟล์</th><th>สถานะ</th><th>ลบ</th></tr></thead><tbody></tbody></table></div></div></div>
+      </div>
+    </div>
+
+    <div id="usersView" style="display:none">
+      <ul class="nav nav-pills mb-4 gap-2 flex-wrap">
+        <li class="nav-item"><button class="nav-link active rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="pill" data-bs-target="#p-rooms" style="background-color: var(--primary-blue);">จัดการห้องประชุม</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="pill" data-bs-target="#p-users" style="color: var(--primary-blue);">จัดการผู้ใช้งาน</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4 fw-bold shadow-sm border" data-bs-toggle="pill" data-bs-target="#p-admin-app" style="color: var(--vibrant-pink); border-color: var(--vibrant-pink) !important;">ADMIN PASS</button></li>
+      </ul>
+      <div class="tab-content mt-4">
+        <div class="tab-pane fade show active" id="p-rooms"><div class="card p-4 border-top border-5 shadow-sm" style="border-color: var(--primary-blue) !important;"><div class="d-flex justify-content-between mb-4 flex-wrap gap-2"><h5 style="color: var(--primary-blue); font-weight: bold;">รายชื่อห้องประชุม</h5><button class="btn btn-primary btn-sm px-4" onclick="openRoomModal()">+ เพิ่มห้อง</button></div><div class="table-responsive"><table id="roomTable" class="table w-100"><thead><tr><th>ID</th><th>ชื่อห้อง</th><th>รายละเอียด</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div></div></div>
+        <div class="tab-pane fade" id="p-users"><div class="card p-4 shadow-sm border-top border-5" style="border-color: var(--primary-blue) !important;"><h5 style="color: var(--primary-blue); font-weight: bold;">จัดการผู้ใช้งาน</h5><button class="btn btn-primary btn-sm mb-4" onclick="openUserModal()">+ เพิ่มผู้ใช้</button><div class="table-responsive"><table id="userTable" class="table w-100"><thead><tr><th>ID</th><th>ชื่อ</th><th>Username</th><th>Role</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div></div></div>
+        <div class="tab-pane fade" id="p-admin-app"><div class="card p-4 shadow-sm border-top border-5" style="border-color: var(--vibrant-pink) !important;"><h5 style="color: var(--vibrant-pink); font-weight: bold;">Admin Override</h5><div class="table-responsive"><table id="adminAppTable" class="table w-100"><thead><tr><th>วันที่</th><th>เวลา</th><th>ห้อง</th><th>ผู้จอง</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody></tbody></table></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-5 mb-5 text-muted small">&copy; 2026 TAWORN SINGSANAN. All rights reserved.</div>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+
+  <script>
+    let calendar;
+    let allBookingsData = [];
+    let globalSignatures = {}; // 🟢 เก็บข้อมูลลายเซ็นไว้แบบ Global
+
+    window.onload = () => { 
+      const u = sessionStorage.getItem("activeUser"); 
+      if(u) { 
+        showDashboard(JSON.parse(u)); 
+      } else { 
+        $('#mainSection').hide(); $('#authSection').show(); 
+      } 
+    };
+
+    // 🟢 ดึงข้อมูลลายเซ็นมาเตรียมไว้
+    function fetchSignatures() {
+      google.script.run.withSuccessHandler(res => {
+        globalSignatures = res;
+      }).getSignatures();
+    }
+
+    function logout() { 
+      Swal.fire({ icon: 'success', title: 'ออกจากระบบสำเร็จ', showConfirmButton: false, timer: 1200 }).then(() => { 
+        sessionStorage.removeItem("activeUser"); 
+        if(calendar) { calendar.destroy(); calendar = null; }
+        if($.fn.DataTable.isDataTable('#bookingTable')) { $('#bookingTable').DataTable().clear().destroy(); $('#bookingTable tbody').empty(); }
+        $('#mainSection').hide(); $('#dashboardView').hide(); $('#usersView').hide(); $('#authSection').fadeIn(); 
+        $('#loginForm').show(); $('#registerForm').hide(); $('#loginForm')[0].reset();
+      });
+    }
+
+    $('#loginForm').on('submit', function(e) {
+      e.preventDefault(); const btn = $('#loginBtn'); btn.prop('disabled', true).text('Checking...');
+      google.script.run.withSuccessHandler(res => {
+        btn.prop('disabled', false).text('เข้าสู่ระบบ');
+        if(res.success) { sessionStorage.setItem("activeUser", JSON.stringify(res.userData)); showDashboard(res.userData); }
+        else Swal.fire('Error', res.message, 'error');
+      }).loginUser({ loginUsername: $('#loginUsername').val(), loginPassword: $('#loginPassword').val() });
+    });
+
+    function showDashboard(u) {
+      $('#authSection').hide(); $('#mainSection').fadeIn();
+      $('#welcomeName').text(`คุณ ${u.name}`); $('#userRoleBadge').text(`(${u.role})`);
+      if(u.role === 'Admin') $('#btnNavUsers').show();
+      loadRoomsToSelect(); 
+      fetchSignatures(); // โหลดลายเซ็นเตรียมไว้เลย
+      switchView('dashboard');
+    }
+
+    function switchView(v) { 
+      const u = JSON.parse(sessionStorage.getItem("activeUser"));
+      if(v === 'users') {
+        if(!u || u.role !== 'Admin') return;
+        $('#dashboardView').hide(); $('#usersView').fadeIn(); $('#btnNavUsers').hide(); $('#btnNavDash').show(); 
+        loadUserTable(); loadAdminAppTable(); loadRoomsTable();
+      } else { 
+        $('#usersView').hide(); $('#dashboardView').fadeIn(); $('#btnNavDash').hide(); 
+        if(u && u.role==='Admin') $('#btnNavUsers').show(); 
+        loadTableData(); setTimeout(renderCalendar, 200); 
+      } 
+    }
+
+    function loadRoomsToSelect() { google.script.run.withSuccessHandler(rooms => { let opt = "<option value='' disabled selected>-- เลือกห้องประชุม --</option>"; rooms.forEach(r => { opt += `<option value="${r[1]}">${r[1]} (${r[2]})</option>`; }); $('#bookRoom').html(opt); }).getRoomsList(); }
+    function loadRoomsTable() { google.script.run.withSuccessHandler(rooms => { const rows = rooms.map(r => [r[0], r[1], r[2], `<button class="btn btn-sm btn-outline-primary me-1" onclick="openRoomModal('${r[0]}','${r[1]}','${r[2]}')">แก้ไข</button><button class="btn btn-sm btn-outline-danger" onclick="deleteRoom('${r[0]}')">ลบ</button>`]); if($.fn.DataTable.isDataTable('#roomTable')) $('#roomTable').DataTable().destroy(); $('#roomTable').DataTable({ data: rows }); }).getRoomsList(); }
+    function openRoomModal(id='', name='', desc='') { Swal.fire({ title: id ? 'แก้ไขห้อง' : 'เพิ่มห้องใหม่', html: `<input id="r_name" class="form-control mb-3" placeholder="ชื่อห้อง" value="${name}"><input id="r_desc" class="form-control" placeholder="รายละเอียด" value="${desc}">`, showCancelButton: true, confirmButtonText: 'บันทึก', preConfirm: () => ({ id: id, name: $('#r_name').val(), desc: $('#r_desc').val() }) }).then(res => { if(res.isConfirmed) google.script.run.withSuccessHandler(() => { loadRoomsTable(); loadRoomsToSelect(); }).saveRoom(res.value); }); }
+    function deleteRoom(id) { Swal.fire({ title: 'ลบห้อง?', icon: 'warning', showCancelButton: true }).then(r => { if(r.isConfirmed) google.script.run.withSuccessHandler(() => { loadRoomsTable(); loadRoomsToSelect(); }).deleteRoom(id); }); }
+
+    // 🟢 ฟังก์ชันโหลดข้อมูลตาราง + คำนวณ Top 3 (เฉพาะเดือนปัจจุบัน)
+    function loadTableData() {
+      google.script.run.withSuccessHandler(data => {
+        allBookingsData = data; 
+        const u = JSON.parse(sessionStorage.getItem("activeUser")); 
+        
+        let conf = 0; 
+        let rooms = {}; // ตัวแปรเก็บคะแนนห้อง (เฉพาะเดือนนี้)
+        
+        // 🟢 ดึงเดือนและปีปัจจุบัน เพื่อเอามาเทียบ
+        const now = new Date();
+        const thisMonth = now.getMonth();
+        const thisYear = now.getFullYear();
+
+        const rows = data.map(r => {
+          // r[9] = Status, r[3] = Date (yyyy-MM-dd)
+          if(r[9]==='Confirmed') { 
+            conf++; // ยอดจองสำเร็จรวม (All Time)
+            
+            // 🟢 เพิ่มเงื่อนไข: ต้องเป็นเดือนนี้และปีนี้เท่านั้น ถึงจะนับลง Top 3
+            let bDate = new Date(r[3]);
+            if (bDate.getMonth() === thisMonth && bDate.getFullYear() === thisYear) {
+                rooms[r[2]] = (rooms[r[2]]||0)+1; 
+            }
+          }
+
+          let managerEmail = r[13]; let hasAccess = false;
+          if (r[6] === u.name || (u.role === 'DeptManager' && managerEmail === u.username) || ['Admin', 'HRManager'].includes(u.role)) hasAccess = true; 
+
+          let fileBtn = r[8] ? (hasAccess ? `<a href="${r[8]}" target="_blank" class="text-info"><i class="fa-solid fa-file-pdf fs-5"></i></a>` : `<i class="fa-solid fa-lock fs-6 text-muted"></i>`) : '-';
+          let delBtn = r[6]===u.name ? `<button class="btn btn-sm btn-link text-danger" onclick="cancelB('${r[0]}')"><i class="fa-solid fa-trash"></i></button>` : '-';
+          
+          let statusBadge = `<span class="badge ${r[9]==='Confirmed'?'bg-success':(r[9].includes('Pending')?'bg-warning':'bg-danger')}">${r[9]}</span>`;
+          if(r[9]==='Confirmed' && r[6] === u.name) {
+            statusBadge += ` <button class="btn btn-sm btn-outline-secondary ms-1 py-0 px-1" onclick="generatePDF('${r[0]}')" title="เอกสารการจอง (PDF)"><i class="fa-solid fa-print"></i></button>`;
+          }
+
+          return [r[3], `${r[4]}-${r[5]}`, r[2], r[6], fileBtn, statusBadge, delBtn];
+        });
+        
+        $('#statTotal').text(conf); 
+        updateTop(rooms); // ส่งข้อมูลเฉพาะเดือนนี้ไปแสดงผล
+        
+        if($.fn.DataTable.isDataTable('#bookingTable')) $('#bookingTable').DataTable().destroy();
+        $('#bookingTable').DataTable({ data: rows, order: [[0,'desc']], language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json' } });
+        if(['Admin','DeptManager','HRManager'].includes(u.role)) loadApproval(u.role, u.username);
+      }).getBookingsList();
+    }
+
+    function renderCalendar() {
+      let el = document.getElementById('calendar');
+      if (!calendar) {
+        calendar = new FullCalendar.Calendar(el, { 
+          initialView: 'dayGridMonth', locale: 'th', height: $(window).width() < 768 ? 500 : 700, 
+          headerToolbar: { left: 'prev,next', center: 'title', right: 'today' }, 
+          events: (i, s) => google.script.run.withSuccessHandler(d => s(d)).getCalendarEvents(),
+          eventClick: i => { 
+            let start = i.event.start; let end = i.event.end;
+            let dateStr = start.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+            let timeStr = `${start.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} - ${end ? end.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}) : '-'}`;
+            let fullDesc = i.event.extendedProps.desc || '-';
+            
+            const currentUser = JSON.parse(sessionStorage.getItem("activeUser"));
+            let targetRow = allBookingsData.find(r => r[11] === i.event.title && r[6] === i.event.extendedProps.booker);
+            
+            let pdfBtn = (targetRow && targetRow[9] === 'Confirmed' && targetRow[6] === currentUser.name) ? `<button class="btn btn-outline-primary mt-3 w-100" onclick="generatePDF('${targetRow[0]}')"><i class="fa-solid fa-file-pdf me-2"></i>ดาวน์โหลดเอกสาร (PDF)</button>` : '';
+
+            Swal.fire({
+              title: '<i class="fa-solid fa-calendar-check text-info me-2"></i>รายละเอียดคิวจอง',
+              html: `<div style="text-align:left; padding:15px; background:#f8f9fa; border-radius:15px; border-left:6px solid #ef233c;"><p class="mb-2 text-dark fw-bold">📌 ${i.event.title}</p><p class="mb-1 small"><b>📅 วันที่:</b> ${dateStr}</p><p class="mb-1 small"><b>⏰ เวลา:</b> ${timeStr} น.</p><p class="mb-1 small"><b>🏢 ห้อง:</b> <span class="text-primary fw-bold">${i.event.extendedProps.room}</span></p><p class="mb-1 small"><b>👤 ผู้จอง:</b> ${i.event.extendedProps.booker}</p><hr class="my-2 border-secondary"><div class="p-2 bg-white rounded shadow-sm border border-light"><p class="mb-1 text-primary fw-bold small"><i class="fa-solid fa-list-ul me-1"></i> ข้อมูลเพิ่มเติม</p><div style="white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; color: #495057;">${fullDesc}</div></div>${pdfBtn}</div>`,
+              showConfirmButton: false, showCloseButton: true
+            }); 
+          } 
+        }); calendar.render();
+      } else calendar.refetchEvents();
+    }
+
+    // 🟢 สร้าง PDF โดยดึงลายเซ็นจากข้อมูลระบบ
+    function generatePDF(bookingId) {
+      let data = allBookingsData.find(r => r[0] === bookingId);
+      if(!data) return;
+
+      Swal.fire({ title: 'กำลังสร้างเอกสาร PDF...', didOpen: () => Swal.showLoading() });
+
+      let safeTitle = data[11] || '-'; let room = data[2]; let date = data[3]; let time = `${data[4]}-${data[5]}`;
+      let booker = data[6]; let managerEmail = data[13]; let desc = data[12] || '-'; let status = data[9];
+      let managerApprove = managerEmail ? managerEmail.split('@')[0] : 'Approved'; 
+      let printDate = new Date().toLocaleDateString('th-TH');
+
+      // 🟢 นำลายเซ็นจากระบบมาใช้งาน (ดึงจากตัวแปร globalSignatures ที่เราดึงมาจากหลังบ้าน)
+      let defaultSign = "https://cdn-icons-png.flaticon.com/512/3771/3771278.png";
+      let signBooker = globalSignatures[booker] || defaultSign;
+      let signManager = globalSignatures[managerEmail] || defaultSign;
+      let signHR = globalSignatures["HR_ADMIN"] || defaultSign;
+      
+      let companyLogo = "https://lh3.googleusercontent.com/d/1XreUiNnpIFxs_qraizBUdSq3RxbpeZRd"; // เปลี่ยนลิงก์โลโก้จริงที่นี่
+      
+      let pdfHtml = `
+        <div id="pdf-content" style="padding: 40px; font-family: sans-serif; background: white; width: 800px; color: black; position: relative;">
+          
+          <div style="border-bottom: 2px solid #0056b3; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="display: flex; align-items: center;">
+              <img src="${companyLogo}" crossorigin="anonymous" style="width: 70px; height: 70px; margin-right: 15px; object-fit: contain;">
+              <div>
+                <h2 style="color: #0056b3; margin: 0; font-size: 22px;">Thai Nippon Rubber Industry Public Company Limited</h2>
+                <h4 style="color: #555; margin: 5px 0 0 0; font-size: 16px;">แบบฟอร์มยืนยันการจองห้องประชุม (Meeting Room Booking)</h4>
+              </div>
+            </div>
+            <div style="text-align: right; font-size: 12px; color: #666; white-space: nowrap;">
+              <p style="margin: 0;"><b>เลขที่อ้างอิง:</b> ${bookingId}</p>
+              <p style="margin: 0;"><b>วันที่พิมพ์:</b> ${printDate}</p>
+            </div>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+            <tr><td style="padding: 8px; width: 30%; border: 1px solid #ddd; background: #f9f9f9;"><b>สถานะการจอง:</b></td><td style="padding: 8px; border: 1px solid #ddd;"><span style="color: green; font-weight: bold;">[ ${status.toUpperCase()} ] - ได้รับการอนุมัติแล้ว</span></td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;"><b>ผู้ขอจอง:</b></td><td style="padding: 8px; border: 1px solid #ddd;">${booker}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;"><b>หัวข้อการประชุม:</b></td><td style="padding: 8px; border: 1px solid #ddd;">${safeTitle}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;"><b>ห้องประชุม:</b></td><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #0056b3;">${room}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;"><b>วันที่ใช้งาน:</b></td><td style="padding: 8px; border: 1px solid #ddd;">${date}</td></tr>
+            <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f9f9f9;"><b>เวลา:</b></td><td style="padding: 8px; border: 1px solid #ddd;">${time}</td></tr>
+          </table>
+
+          <div style="border: 1px solid #ddd; padding: 15px; background: #fdfdfd; min-height: 100px;">
+            <p style="margin-top: 0; font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px;">รายละเอียด / อุปกรณ์เพิ่มเติม:</p>
+            <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6;">${desc}</div>
+          </div>
+
+          <div style="margin-top: 60px; display: flex; justify-content: space-around; text-align: center; font-size: 13px;">
+            <div>
+              <img src="${signBooker}" crossorigin="anonymous" style="height: 40px; margin-bottom: -10px; max-width: 150px; object-fit: contain;" alt="Sign Booker">
+              <p style="margin: 0;">__________________________</p>
+              <p style="margin-top: 5px;">ผู้ขอจอง<br>(${booker})</p>
+            </div>
+            <div>
+              <img src="${signManager}" crossorigin="anonymous" style="height: 40px; margin-bottom: -10px; max-width: 150px; object-fit: contain;" alt="Sign Manager">
+              <p style="margin: 0;">__________________________</p>
+              <p style="margin-top: 5px;">ผู้จัดการแผนก (ผู้อนุมัติขั้นต้น)<br>(${managerApprove})</p>
+            </div>
+            <div>
+              <img src="${signHR}" crossorigin="anonymous" style="height: 40px; margin-bottom: -10px; max-width: 150px; object-fit: contain;" alt="Sign HR">
+              <p style="margin: 0;">__________________________</p>
+              <p style="margin-top: 5px;">ฝ่ายบุคคล/ส่วนกลาง<br>(ผู้อนุมัติเอกสาร)</p>
+            </div>
+          </div>
+
+          <div style="margin-top: 60px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 10px; text-align: left;">
+            <b>Form No.</b> PER-48 &nbsp;&nbsp;&nbsp; <b>Issue No.</b> 02 &nbsp;&nbsp;&nbsp; <b>Effective Date:</b> 02/10/2023
+          </div>
+          
+        </div>
+      `;
+
+      const container = document.createElement('div');
+      container.innerHTML = pdfHtml;
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      document.body.appendChild(container);
+
+      html2canvas(document.getElementById('pdf-content'), { scale: 2, useCORS: true }).then(canvas => {
+        const imgData = canvas.toDataURL('image/jpeg');
+        const pdf = new jspdf.jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`TNR_Booking_${bookingId}.pdf`);
+        
+        document.body.removeChild(container);
+        Swal.close();
+      });
+    }
+
+    $('#bookingForm').on('submit', function(e) {
+      e.preventDefault(); const btn = $('#submitBookingBtn'); btn.prop('disabled',true).text('กำลังส่งข้อมูล...');
+      const u = JSON.parse(sessionStorage.getItem("activeUser")); const f = $('#bookFile')[0].files[0];
+      let equips = []; $('input[name="bookEquip"]:checked').each(function() { equips.push($(this).val()); });
+
+      let combinedDesc = `แผนก: ${$('#bookDept').val()} | โทร: ${$('#bookPhone').val()}
+ประเภทกิจกรรม: ${$('#bookActivityType').val()} | จำนวน: ${$('#bookHeadcount').val()} ท่าน
+อุปกรณ์: ${equips.length > 0 ? equips.join(', ') : '-'}
+รายละเอียด: ${$('#bookDesc').val()}`;
+
+      const d = { 
+        username: u.username, name: u.name, room: $('#bookRoom').val(), startDate: $('#bookStartDate').val(), endDate: $('#bookEndDate').val(), 
+        startTime: $('#bookStartTime').val(), endTime: $('#bookEndTime').val(), attendees: $('#bookAttendees').val(), title: $('#bookTitle').val(), 
+        description: combinedDesc, managerEmail: $('#bookManagerEmail').val(), fileBase64: "", fileName: "" 
+      };
+
+      if(f) { const r = new FileReader(); r.onload = e => { d.fileBase64 = e.target.result; d.fileName = f.name; google.script.run.withSuccessHandler(res => { btn.prop('disabled',false).text('ส่งคำขอจองห้อง'); if(res.success) { Swal.fire('สำเร็จ',res.message,'success'); $('#bookingForm')[0].reset(); loadTableData(); if(calendar) calendar.refetchEvents(); } else Swal.fire('Error', res.message, 'error'); }).submitBooking(d); }; r.readAsDataURL(f); }
+      else google.script.run.withSuccessHandler(res => { btn.prop('disabled',false).text('ส่งคำขอจองห้อง'); if(res.success) { Swal.fire('สำเร็จ',res.message,'success'); $('#bookingForm')[0].reset(); loadTableData(); if(calendar) calendar.refetchEvents(); } else Swal.fire('Error', res.message, 'error'); }).submitBooking(d);
+    });
+
+    // 🟢 ตารางรออนุมัติส่วนตัว (Dashboard) - ล็อคปุ่ม HR ถ้ายังไม่ถึงคิว
+    function loadApproval(role, username) { 
+      google.script.run.withSuccessHandler(data => { 
+        let h = ""; 
+        data.forEach(r => { 
+          let safeDate = r[3]; let safeTime = `${r[4]}-${r[5]}`;
+          let encTitle = encodeURIComponent(r[11] || '-'); let encBooker = encodeURIComponent(r[6] || '-'); let encRoom = encodeURIComponent(r[2] || '-'); let encDesc = encodeURIComponent(r[12] || '-');
+          
+          let btnApprove = `<button class="btn btn-sm btn-success rounded-pill me-1 mb-1" onclick="appr('${r[0]}','Approve','${encTitle}','${safeDate}','${safeTime}','${encBooker}','${encRoom}','${encDesc}')"><i class="fa-solid fa-check"></i></button>`;
+          let btnReject = `<button class="btn btn-sm btn-danger rounded-pill mb-1" onclick="appr('${r[0]}','Reject','${encTitle}','${safeDate}','${safeTime}','${encBooker}','${encRoom}','${encDesc}')"><i class="fa-solid fa-xmark"></i></button>`;
+
+          // 🔴 ถ้าเป็น HR แต่สถานะยังรอแผนก ให้เปลี่ยนปุ่มเป็นสีเทา กดไม่ได้
+          if (role === 'HRManager' && r[9] === 'Pending_Dept') {
+            btnApprove = `<button class="btn btn-sm btn-secondary rounded-pill me-1 mb-1" disabled title="รอหัวหน้าแผนกอนุมัติก่อน"><i class="fa-solid fa-clock"></i> รอแผนก</button>`;
+            btnReject = `<button class="btn btn-sm btn-secondary rounded-pill mb-1" disabled><i class="fa-solid fa-xmark"></i></button>`;
+          }
+
+          h += `<tr><td>${safeDate}</td><td>${safeTime}</td><td>${r[2]}</td><td>${r[6]}</td><td>
+            ${btnApprove}
+            ${btnReject}
+          </td></tr>`; 
+        }); 
+        $('#approvalSection').toggle(data.length > 0); $('#approvalBody').html(h); 
+      }).getPendingApprovals(role, username); 
+    }
+
+    function loadAdminAppTable() { 
+      const u = JSON.parse(sessionStorage.getItem("activeUser"));
+      google.script.run.withSuccessHandler(data => { 
+        const rows = data.map(r => {
+          let safeDate = r[3]; let safeTime = `${r[4]}-${r[5]}`;
+          let encTitle = encodeURIComponent(r[11] || '-'); let encBooker = encodeURIComponent(r[6] || '-'); let encRoom = encodeURIComponent(r[2] || '-'); let encDesc = encodeURIComponent(r[12] || '-');
+          return [safeDate, safeTime, r[2], r[6], r[9], `<button class="btn btn-sm btn-success rounded-pill" onclick="appr('${r[0]}','Approve','${encTitle}','${safeDate}','${safeTime}','${encBooker}','${encRoom}','${encDesc}')">อนุมัติแทน</button>`];
+        }); 
+        if($.fn.DataTable.isDataTable('#adminAppTable')) $('#adminAppTable').DataTable().destroy(); 
+        $('#adminAppTable').DataTable({data:rows}); 
+      }).getPendingApprovals('Admin', u.username); 
+    }
+
+    function appr(id, act, encTitle, date, time, encBooker, encRoom, encDesc) { 
+      const u = JSON.parse(sessionStorage.getItem("activeUser"));
+      let title = decodeURIComponent(encTitle); let booker = decodeURIComponent(encBooker); let room = decodeURIComponent(encRoom); let desc = decodeURIComponent(encDesc);
+      let html = `<div style="text-align:left; padding:15px; background:#f0f7ff; border-radius:15px; border-left:6px solid #0056b3; margin-bottom:15px;"><p class="mb-2 text-dark fw-bold">📌 ${title}</p><p class="mb-1 small"><b>📅 วันที่:</b> ${date} <b>⏰ เวลา:</b> ${time} น.</p><p class="mb-1 small"><b>🏢 ห้อง:</b> <span class="text-primary fw-bold">${room}</span></p><p class="mb-1 small"><b>👤 ผู้จอง:</b> ${booker}</p><hr class="my-2 border-secondary"><div class="p-2 bg-white rounded shadow-sm border border-light"><p class="mb-1 text-primary fw-bold small"><i class="fa-solid fa-list-ul me-1"></i> ข้อมูลเพิ่มเติม</p><div style="white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; color: #495057;">${desc}</div></div></div><p>ยืนยันการ <b class="${act === 'Approve' ? 'text-success' : 'text-danger'}">${act === 'Approve' ? 'อนุมัติ' : 'ปฏิเสธ'}</b> คิวนี้หรือไม่?</p>`;
+      Swal.fire({ title: 'ตรวจสอบรายละเอียด', html: html, icon: 'info', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก', confirmButtonColor: act === 'Approve' ? '#28a745' : '#d33' }).then(res => {
+        if(res.isConfirmed) { Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() }); google.script.run.withSuccessHandler(r => { if(r.success){ Swal.fire('สำเร็จ', r.message, 'success'); } else { Swal.fire('คำเตือน', r.message, 'error'); } loadTableData(); if(calendar) calendar.refetchEvents(); if(u.role === 'Admin') loadAdminAppTable(); }).processApproval(id, act, u.role, u.username); }
+      });
+    }
+
+    // 🟢 3. อัปเดตตารางและปุ่มแก้ไขผู้ใช้ ให้รับส่งข้อมูล "ลายเซ็น"
+    function loadUserTable() { 
+      google.script.run.withSuccessHandler(data => { 
+        const rows = data.map(r => {
+          // r[5] คือช่องเก็บลิงก์รูปลายเซ็น (คอลัมน์ F ใน Sheet)
+          let sigUrl = r[5] || '';
+          let btnEdit = `<button class="btn btn-sm btn-outline-primary me-1" onclick="openUserModal('${r[0]}','${r[1]}','${r[2]}','${r[4]}','${sigUrl}')">แก้ไข</button>`;
+          let btnDelete = r[4] === 'Admin' ? `<button class="btn btn-sm btn-outline-secondary" disabled title="ห้ามลบ Admin">ลบไม่ได้</button>` : `<button class="btn btn-sm btn-outline-danger" onclick="delUser('${r[0]}')">ลบ</button>`;
+          return [r[0], r[1], r[2], r[4], btnEdit + btnDelete];
+        }); 
+        if($.fn.DataTable.isDataTable('#userTable')) $('#userTable').DataTable().destroy(); 
+        $('#userTable').DataTable({data:rows, language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json' }}); 
+      }).adminGetUsersList('Admin'); 
+    }
+    
+    function delUser(uid) { Swal.fire({ title: 'ยืนยันการลบผู้ใช้?', text: "การกระทำนี้ไม่สามารถย้อนกลับได้!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' }).then(r => { if(r.isConfirmed) google.script.run.withSuccessHandler(res => { if(res.success) { Swal.fire('ลบแล้ว!', res.message, 'success'); loadUserTable(); } else { Swal.fire('เกิดข้อผิดพลาด', res.message, 'error'); } }).adminDeleteUser(uid, 'Admin'); }); }
+    function updateTop(counts) { let sorted = Object.keys(counts).map(k=>({n:k,c:counts[k]})).sort((a,b)=>b.c-a.c).slice(0,3); let h = ""; sorted.forEach((r,i) => { h += `<div class="col-4"><div class="card p-2 shadow-sm border"><h4 class="mb-1" style="color:var(--vibrant-pink);">${['🥇','🥈','🥉'][i]}</h4><b class="small">${r.n}</b><br><span class="badge bg-light border" style="color:var(--primary-blue);">${r.c} ครั้ง</span></div></div>`; }); $('#statTopRooms').html(h||"ไม่มีข้อมูล"); }
+   function cancelB(id) { 
+      Swal.fire({
+        title: 'ยืนยันยกเลิกการจอง ใช่หรือไม่?',
+        text: "หากยกเลิกแล้ว จะไม่สามารถเรียกคืนคิวนี้ได้",
+        icon: 'warning', 
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'ใช่, ยกเลิกการจอง',
+        cancelButtonText: 'ปิด'
+      }).then((result) => { 
+        if(result.isConfirmed) {
+          Swal.fire({ title: 'กำลังยกเลิก...', didOpen: () => Swal.showLoading() });
+          google.script.run.withSuccessHandler((res) => {
+            if(res.success) {
+              Swal.fire('สำเร็จ', res.message, 'success');
+              loadTableData(); 
+              if(calendar) calendar.refetchEvents(); 
+            } else {
+              Swal.fire('ข้อผิดพลาด', res.message, 'error');
+            }
+          }).cancelBooking(id, JSON.parse(sessionStorage.getItem("activeUser")).name); 
+        }
+      }); 
+    }
+    
+    // 🟢 4. เพิ่มช่องกรอก URL ลายเซ็นลงใน Popup จัดการผู้ใช้
+    function openUserModal(uid='', name='', user='', role='User', signature='') { 
+      Swal.fire({ 
+        title: 'USER INFO & SIGNATURE', 
+        html: `
+          <input id="u_name" class="form-control mb-3" placeholder="ชื่อ" value="${name}">
+          <input id="u_user" class="form-control mb-3" placeholder="อีเมล (Username)" value="${user}">
+          <input id="u_pass" type="password" class="form-control mb-3" placeholder="Password (ปล่อยว่างถ้าไม่เปลี่ยน)">
+          <input id="u_sign" class="form-control mb-3 border-info" placeholder="วางลิงก์รูปลายเซ็น (URL/Base64)" value="${signature}">
+          <select id="u_role" class="form-select">
+            <option value="User" ${role==='User'?'selected':''}>User</option>
+            <option value="DeptManager" ${role==='DeptManager'?'selected':''}>DeptManager</option>
+            <option value="HRManager" ${role==='HRManager'?'selected':''}>HRManager</option>
+            <option value="Admin" ${role==='Admin'?'selected':''}>Admin</option>
+          </select>
+        `, 
+        showCancelButton: true, 
+        preConfirm: () => ({
+          uid:uid, name:$('#u_name').val(), username:$('#u_user').val(), 
+          password:$('#u_pass').val(), role:$('#u_role').val(), signature:$('#u_sign').val() // ส่งลายเซ็นไปให้หลังบ้าน
+        }) 
+      }).then(res => { 
+        if(res.isConfirmed) {
+          google.script.run.withSuccessHandler(r => { 
+            loadUserTable(); 
+            fetchSignatures(); // อัปเดตลายเซ็นเข้าระบบทันที
+          }).adminSaveUser(res.value, 'Admin'); 
+        }
+      }); 
+    }
+  </script>
+</body>
 </html>
