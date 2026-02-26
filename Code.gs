@@ -1,13 +1,1 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <base target="_top">
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เว็บแอป</title>
-</head>
-<body>
-    <iframe style="width: 100%; height: 100vh;" scrolling="yes" src="https://script.google.com/macros/s/AKfycbxJcT8ZN8KgSlvtPBAwP3p7uI_1k31f51Cyz2LP8Mk0PhP10mbraiJyS-IsdyfZoRfyPg/exec" frameborder="0"></iframe>
-</body>
-</html>
+
